@@ -5,6 +5,8 @@ var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 var session = require('express-session');
 var FileStore = require('session-file-store')(session);
+var passport = require('passport');
+var authenticate = require('./authenticate');
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
@@ -34,6 +36,7 @@ app.set('view engine', 'jade');
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
 // app.use(cookieParser('12345-67890-09876-54321'));  // Not Needed if Sessions Used
 app.use(session({
   name: 'session-id',
@@ -43,6 +46,8 @@ app.use(session({
   store: new FileStore()
 }));
 
+app.use(passport.initialize());
+app.use(passport.session());
 
 // Note that these two mountings occur before authentication
 app.use('/', indexRouter);
@@ -50,22 +55,15 @@ app.use('/users', usersRouter);
 
 // Authentication function
 function auth (req, res, next) {
-  console.log(req.session);
+  console.log(req.user);
 
-  if(!req.session.user) {
-      var err = new Error('You are not authenticated!');
-      err.status = 403;
-      return next(err);
+  if (!req.user) {
+    var err = new Error('You are not authenticated!');
+    err.status = 403;
+    next(err);
   }
   else {
-    if (req.session.user === 'authenticated') {
-      next();
-    }
-    else {
-      var err = new Error('You are not authenticated!');
-      err.status = 403;
-      return next(err);
-    }
+        next();
   }
 }
 
